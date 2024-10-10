@@ -26,7 +26,6 @@ Resources:
         AlertingModule: '' # optional
         BastionModule: '' # optional
         KmsKeyModule: '' # optional
-        EngineVersion: '5.0.5' # optional
         CacheNodeType: 'cache.t2.micro' # optional
         TransitEncryption: 'true' # optional
         AuthToken: '' # optional
