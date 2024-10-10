@@ -1,6 +1,6 @@
 # cfn-modules: ElastiCache Serverless
 
-ElastiCache Serverless with secure firewall configuration, [encryption](https://www.npmjs.com/package/@cfn-modules/kms-key), multi AZ, backup enabled, and [alerting](https://www.npmjs.com/package/@cfn-modules/alerting).
+ElastiCache Serverless with secure firewall configuration, [encryption](https://www.npmjs.com/package/@cfn-modules/kms-key), backup enabled, and [alerting](https://www.npmjs.com/package/@cfn-modules/alerting).
 
 ## Install
 
@@ -26,14 +26,8 @@ Resources:
         AlertingModule: '' # optional
         BastionModule: '' # optional
         KmsKeyModule: '' # optional
-        CacheNodeType: 'cache.t2.micro' # optional
-        TransitEncryption: 'true' # optional
-        AuthToken: '' # optional
-        SnapshotRetentionLimit: '35' # optional
-        SnapshotName: '' # optional
-        NumShards: '1' # optional
-        NumReplicas: '1' # optional
-        CacheParameterGroupName: '' # optional
+        CacheName: 'demo' # required
+        SnapshotRetentionLimit: '35' # optional      
       TemplateURL: './node_modules/@cfn-modules/elasticache-serverless/module.yml'
 ```
 
