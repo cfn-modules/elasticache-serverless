@@ -40,6 +40,9 @@ Parameters:
     Default: 35
     MinValue: 0
     MaxValue: 35
+  CacheName:
+    Description: 'The unique name for the cache.'
+    Type: String
   MaxDataStorageLimit:
     Description: '...'
     Type: 'Number'
@@ -86,7 +89,7 @@ Resources:
       KmsKeyId: !If [HasKmsKeyModule, {'Fn::ImportValue': !Sub '${KmsKeyModule}-Arn'}, !Ref 'AWS::NoValue']
       SecurityGroupIds:
       - !Ref SecurityGroup
-      ServerlessCacheName: !Ref 'AWS::StackName'
+      ServerlessCacheName: !Ref CacheName
       SnapshotRetentionLimit: !Ref SnapshotRetentionLimit
       SubnetIds: !Split [',', {'Fn::ImportValue': !Sub '${VpcModule}-SubnetIdsPrivate'}]
 Outputs:
@@ -98,7 +101,7 @@ Outputs:
     Value: !Ref 'AWS::StackName'
   Name:
     Description: 'The name of the cluster'
-    Value: !Ref 'AWS::StackName'
+    Value: !Ref CacheName
     Export:
       Name: !Sub '${AWS::StackName}-Name'
   DnsName:
