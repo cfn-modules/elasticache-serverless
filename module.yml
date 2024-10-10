@@ -50,7 +50,7 @@ Parameters:
   MaxECPUPerSecondLimit:
     Description: '...'
     Type: 'Number'
-    Default: 100
+    Default: 1000
 Conditions:
   # HasAlertingModule: !Not [!Equals [!Ref AlertingModule, '']]
   HasBastionModule: !Not [!Equals [!Ref BastionModule, '']]
