@@ -1,0 +1,138 @@
+---
+# Copyright 2019 widdix GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'cfn-modules: ElastiCache Serverless Valkey'
+# cfn-modules:implements(ExposeName, ExposeDnsName)
+Parameters:
+  VpcModule:
+    Description: 'Stack name of vpc module.'
+    Type: String
+  ClientSgModule:
+    Description: 'Stack name of client-sg module.'
+    Type: String
+  AlertingModule:
+    Description: 'Optional but recommended stack name of alerting module.'
+    Type: String
+    Default: ''
+  BastionModule:
+    Description: 'Optional but recommended stack name of module implementing Bastion.'
+    Type: String
+    Default: ''
+  KmsKeyModule:
+    Description: 'Optional but recommended stack name of kms-key module (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
+    Type: String
+    Default: ''
+  EngineVersion:
+    Description: 'Valkey version'
+    Type: String
+    Default: '5.0.5'
+    AllowedValues: # aws elasticache describe-cache-engine-versions --engine redis --query "CacheEngineVersions[].EngineVersion"
+    - '5.0.5'
+    - '5.0.6'
+    - '6.0'
+    - '6.2'
+  SnapshotRetentionLimit:
+    Description: 'The number of days for which ElastiCache retains automatic snapshots before deleting them (set to 0 to disable backups).'
+    Type: Number
+    Default: 35
+    MinValue: 0
+    MaxValue: 35
+  MaxDataStorageLimit:
+    Description: '...'
+    Type: 'Number'
+    Default: 10
+  MaxECPUPerSecondLimit:
+    Description: '...'
+    Type: 'Number'
+    Default: 100
+Conditions:
+  HasAlertingModule: !Not [!Equals [!Ref AlertingModule, '']]
+  HasBastionModule: !Not [!Equals [!Ref BastionModule, '']]
+  HasKmsKeyModule: !Not [!Equals [!Ref KmsKeyModule, '']]
+Resources:
+  SecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: !Ref 'AWS::StackName'
+      VpcId: {'Fn::ImportValue': !Sub '${VpcModule}-Id'}
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 6379
+        ToPort: 6379
+        SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${ClientSgModule}-SecurityGroupId'}
+  SecurityGroupInSSHBastion:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Condition: HasBastionModule
+    Properties:
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      FromPort: 6379
+      ToPort: 6379
+      SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${BastionModule}-SecurityGroupId'}
+  ServerlessCache:
+    Type: 'AWS::ElastiCache::ServerlessCache'
+    Properties:
+      CacheUsageLimits: 
+        DataStorage:
+          Unit: 'GB'
+          Maximum: !Ref MaxDataStorageLimit
+        ECPUPerSecond:
+          Maximum: !Ref MaxECPUPerSecondLimit
+      DailySnapshotTime: '00:00-03:00'
+      Engine: 'valkey'
+      KmsKeyId: !If [HasKmsKeyModule, {'Fn::ImportValue': !Sub '${KmsKeyModule}-Arn'}, !Ref 'AWS::NoValue']
+      SecurityGroupIds: 
+      - !Ref SecurityGroup
+      ServerlessCacheName: !Ref 'AWS::StackName'
+      SnapshotRetentionLimit: !Ref SnapshotRetentionLimit
+      SubnetIds: !Split [',', {'Fn::ImportValue': !Sub '${VpcModule}-SubnetIdsPrivate'}]
+      # TODO Add alarms
+  # BytesUsedForCacheAlarm:
+  #   Condition: HasAlertingModule
+  #   Type: 'AWS::CloudWatch::Alarm'
+  #   Properties:
+  #     AlarmActions:
+  #     - 'Fn::ImportValue': !Sub '${AlertingModule}-Arn'
+  #     AlarmDescription: 'Bytes used for cache within 10 minutes higher than 80%'
+  #     Namespace: 'AWS/ElastiCache'
+  #     OKActions:
+  #     - 'Fn::ImportValue': !Sub '${AlertingModule}-Arn'
+  #     MetricName: BytesUsedForCache
+  #     Statistic: Average
+  #     Period: 600
+  #     EvaluationPeriods: 1
+  #     ComparisonOperator: GreaterThanThreshold
+  #     Threshold: 80
+  #     Dimensions:
+  #     - Name: CacheClusterId
+  #       Value: !GetAtt 'ServerlessCache.ServerlessCacheName'
+  
+Outputs:
+  ModuleId:
+    Value: 'elasticache-serverless'
+  ModuleVersion:
+    Value: '0.1.0'
+  StackName:
+    Value: !Ref 'AWS::StackName'
+  Name:
+    Description: 'The name of the cluster'
+    Value: !Ref 'AWS::StackName'
+    Export:
+      Name: !Sub '${AWS::StackName}-Name'
+  DnsName:
+    Description: 'The DNS address of the Serverless cache.'
+    Value: !GetAtt 'ServerlessCache.Endpoint.Address'
+    Export:
+      Name: !Sub '${AWS::StackName}-DnsName'

@@ -1,0 +1,21 @@
+{
+  "private": true,
+  "dependencies": {
+    "eslint": "7.6.0",
+    "ava": "3.11.1",
+    "@cfn-modules/test": "0.7.3",
+    "@cfn-modules/elasticache-serverless": "file:../",
+    "@cfn-modules/vpc": "1.3.2",
+    "@cfn-modules/client-sg": "1.0.0"
+  },
+  "scripts": {
+    "test": "eslint . && ava -c 4 *.js"
+  },
+  "ava": {
+    "files": [
+      "*.js"
+    ],
+    "concurrency": 4,
+    "timeout": "2h"
+  }
+}
