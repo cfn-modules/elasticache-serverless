@@ -48,7 +48,7 @@ Parameters:
     Type: 'Number'
     Default: 10
   MaxECPUPerSecondLimit:
-    Description: '...'
+    Description: 'Maximum number of ECPU per second. Must be between 1000 and 15000000. You can set the value to zero to remove the limit.'
     Type: 'Number'
     Default: 1000
 Conditions:
@@ -84,7 +84,7 @@ Resources:
           Maximum: !Ref MaxDataStorageLimit
         ECPUPerSecond:
           Maximum: !Ref MaxECPUPerSecondLimit
-      DailySnapshotTime: '00:00-03:00'
+      DailySnapshotTime: '03:00'
       Engine: 'valkey'
       KmsKeyId: !If [HasKmsKeyModule, {'Fn::ImportValue': !Sub '${KmsKeyModule}-Arn'}, !Ref 'AWS::NoValue']
       SecurityGroupIds:
