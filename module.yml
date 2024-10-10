@@ -22,10 +22,10 @@ Parameters:
   ClientSgModule:
     Description: 'Stack name of client-sg module.'
     Type: String
-  AlertingModule:
-    Description: 'Optional but recommended stack name of alerting module.'
-    Type: String
-    Default: ''
+  # AlertingModule:
+  #   Description: 'Optional but recommended stack name of alerting module.'
+  #   Type: String
+  #   Default: ''
   BastionModule:
     Description: 'Optional but recommended stack name of module implementing Bastion.'
     Type: String
@@ -34,15 +34,6 @@ Parameters:
     Description: 'Optional but recommended stack name of kms-key module (ignored when DBSnapshotIdentifier is set, value used from snapshot).'
     Type: String
     Default: ''
-  EngineVersion:
-    Description: 'Valkey version'
-    Type: String
-    Default: '5.0.5'
-    AllowedValues: # aws elasticache describe-cache-engine-versions --engine redis --query "CacheEngineVersions[].EngineVersion"
-    - '5.0.5'
-    - '5.0.6'
-    - '6.0'
-    - '6.2'
   SnapshotRetentionLimit:
     Description: 'The number of days for which ElastiCache retains automatic snapshots before deleting them (set to 0 to disable backups).'
     Type: Number
@@ -58,7 +49,7 @@ Parameters:
     Type: 'Number'
     Default: 100
 Conditions:
-  HasAlertingModule: !Not [!Equals [!Ref AlertingModule, '']]
+  # HasAlertingModule: !Not [!Equals [!Ref AlertingModule, '']]
   HasBastionModule: !Not [!Equals [!Ref BastionModule, '']]
   HasKmsKeyModule: !Not [!Equals [!Ref KmsKeyModule, '']]
 Resources:
@@ -84,7 +75,7 @@ Resources:
   ServerlessCache:
     Type: 'AWS::ElastiCache::ServerlessCache'
     Properties:
-      CacheUsageLimits: 
+      CacheUsageLimits:
         DataStorage:
           Unit: 'GB'
           Maximum: !Ref MaxDataStorageLimit
@@ -93,32 +84,11 @@ Resources:
       DailySnapshotTime: '00:00-03:00'
       Engine: 'valkey'
       KmsKeyId: !If [HasKmsKeyModule, {'Fn::ImportValue': !Sub '${KmsKeyModule}-Arn'}, !Ref 'AWS::NoValue']
-      SecurityGroupIds: 
+      SecurityGroupIds:
       - !Ref SecurityGroup
       ServerlessCacheName: !Ref 'AWS::StackName'
       SnapshotRetentionLimit: !Ref SnapshotRetentionLimit
       SubnetIds: !Split [',', {'Fn::ImportValue': !Sub '${VpcModule}-SubnetIdsPrivate'}]
-      # TODO Add alarms
-  # BytesUsedForCacheAlarm:
-  #   Condition: HasAlertingModule
-  #   Type: 'AWS::CloudWatch::Alarm'
-  #   Properties:
-  #     AlarmActions:
-  #     - 'Fn::ImportValue': !Sub '${AlertingModule}-Arn'
-  #     AlarmDescription: 'Bytes used for cache within 10 minutes higher than 80%'
-  #     Namespace: 'AWS/ElastiCache'
-  #     OKActions:
-  #     - 'Fn::ImportValue': !Sub '${AlertingModule}-Arn'
-  #     MetricName: BytesUsedForCache
-  #     Statistic: Average
-  #     Period: 600
-  #     EvaluationPeriods: 1
-  #     ComparisonOperator: GreaterThanThreshold
-  #     Threshold: 80
-  #     Dimensions:
-  #     - Name: CacheClusterId
-  #       Value: !GetAtt 'ServerlessCache.ServerlessCacheName'
-  
 Outputs:
   ModuleId:
     Value: 'elasticache-serverless'
