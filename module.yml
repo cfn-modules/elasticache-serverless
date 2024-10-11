@@ -22,10 +22,10 @@ Parameters:
   ClientSgModule:
     Description: 'Stack name of client-sg module.'
     Type: String
-  # AlertingModule:
-  #   Description: 'Optional but recommended stack name of alerting module.'
-  #   Type: String
-  #   Default: ''
+  AlertingModule:
+    Description: 'Optional but recommended stack name of alerting module.'
+    Type: String
+    Default: ''
   BastionModule:
     Description: 'Optional but recommended stack name of module implementing Bastion.'
     Type: String
@@ -40,16 +40,19 @@ Parameters:
     Default: 35
     MinValue: 0
     MaxValue: 35
+  CacheName:
+    Description: 'The unique name for the cache.'
+    Type: String
   MaxDataStorageLimit:
     Description: '...'
     Type: 'Number'
     Default: 10
   MaxECPUPerSecondLimit:
-    Description: '...'
+    Description: 'Maximum number of ECPU per second. Must be between 1000 and 15000000. You can set the value to zero to remove the limit.'
     Type: 'Number'
-    Default: 100
+    Default: 1000
 Conditions:
-  # HasAlertingModule: !Not [!Equals [!Ref AlertingModule, '']]
+  HasAlertingModule: !Not [!Equals [!Ref AlertingModule, '']]
   HasBastionModule: !Not [!Equals [!Ref BastionModule, '']]
   HasKmsKeyModule: !Not [!Equals [!Ref KmsKeyModule, '']]
 Resources:
@@ -81,24 +84,75 @@ Resources:
           Maximum: !Ref MaxDataStorageLimit
         ECPUPerSecond:
           Maximum: !Ref MaxECPUPerSecondLimit
-      DailySnapshotTime: '00:00-03:00'
+      DailySnapshotTime: '03:00'
       Engine: 'valkey'
       KmsKeyId: !If [HasKmsKeyModule, {'Fn::ImportValue': !Sub '${KmsKeyModule}-Arn'}, !Ref 'AWS::NoValue']
       SecurityGroupIds:
       - !Ref SecurityGroup
-      ServerlessCacheName: !Ref 'AWS::StackName'
+      ServerlessCacheName: !Ref CacheName
       SnapshotRetentionLimit: !Ref SnapshotRetentionLimit
       SubnetIds: !Split [',', {'Fn::ImportValue': !Sub '${VpcModule}-SubnetIdsPrivate'}]
+  BytesUsedForCacheAlarm:
+    Condition: HasAlertingModule
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${AlertingModule}-Arn'
+      AlarmDescription: '80% of maximum data storage limit reached.'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${AlertingModule}-Arn'
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: !Ref MaxDataStorageLimit
+      Metrics:
+      - Id: 'o'
+        Expression: 'm*0.8'
+      - Id: 'm'
+        MetricStat:
+          Metric:
+            Namespace: 'AWS/ElastiCache'
+            MetricName: 'BytesUsedForCache'
+            Dimensions:
+            - Name: 'clusterId'
+              Value: !Ref CacheName
+          Unit: 'Gigabytes'
+          Period: 900
+          Stat: 'Max'
+  ElastiCacheProcessingUnitsAlarm:
+    Condition: HasAlertingModule
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmActions:
+      - 'Fn::ImportValue': !Sub '${AlertingModule}-Arn'
+      AlarmDescription: '80% of maximum procession units reached.'
+      OKActions:
+      - 'Fn::ImportValue': !Sub '${AlertingModule}-Arn'
+      EvaluationPeriods: 1
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: !Ref MaxECPUPerSecondLimit
+      Metrics:
+      - Id: 'o'
+        Expression: 'm/900*0.8'
+      - Id: 'm'
+        MetricStat:
+          Metric:
+            Namespace: 'AWS/ElastiCache'
+            MetricName: 'ElastiCacheProcessingUnits'
+            Dimensions:
+            - Name: 'clusterId'
+              Value: !Ref CacheName
+          Period: 900
+          Stat: 'SUM'
 Outputs:
   ModuleId:
     Value: 'elasticache-serverless'
   ModuleVersion:
-    Value: '0.1.0'
+    Value: '0.2.0'
   StackName:
     Value: !Ref 'AWS::StackName'
   Name:
     Description: 'The name of the cluster'
-    Value: !Ref 'AWS::StackName'
+    Value: !Ref CacheName
     Export:
       Name: !Sub '${AWS::StackName}-Name'
   DnsName:

@@ -12,5 +12,9 @@
   "repository": {
     "type" : "git",
     "url" : "https://github.com/cfn-modules/elasticache-serverless.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }

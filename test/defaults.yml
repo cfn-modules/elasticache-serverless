@@ -23,4 +23,5 @@ Resources:
       Parameters:
         VpcModule: !GetAtt 'Vpc.Outputs.StackName'
         ClientSgModule: !GetAtt 'ClientSg.Outputs.StackName'
+        CacheName: 'test-default'
       TemplateURL: './node_modules/@cfn-modules/elasticache-serverless/module.yml'
