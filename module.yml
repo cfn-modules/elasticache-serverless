@@ -44,7 +44,7 @@ Parameters:
     Description: 'The unique name for the cache.'
     Type: String
   MaxDataStorageLimit:
-    Description: '...'
+    Description: 'The maximum amount of data stored in the cache.'
     Type: 'Number'
     Default: 10
   MaxECPUPerSecondLimit:

@@ -27,7 +27,9 @@ Resources:
         BastionModule: '' # optional
         KmsKeyModule: '' # optional
         CacheName: 'demo' # required
-        SnapshotRetentionLimit: '35' # optional      
+        SnapshotRetentionLimit: '35' # optional
+        MaxDataStorageLimit: 10 # optional
+        MaxECPUPerSecondLimit: 1000 # optional
       TemplateURL: './node_modules/@cfn-modules/elasticache-serverless/module.yml'
 ```
 
@@ -88,34 +90,6 @@ none
       <td></td>
     </tr>
     <tr>
-      <td>EngineVersion</td>
-      <td>Redis version</td>
-      <td>5.0.5</td>
-      <td>no</td>
-      <td>[5.0.5,5.0.6,6.0,6.2]</td>
-    </tr>
-    <tr>
-      <td>CacheNodeType</td>
-      <td>The compute and memory capacity of the nodes in the node group (shard)</td>
-      <td>cache.t2.micro</td>
-      <td>no</td>
-      <td></td>
-    </tr>
-    <tr>
-      <td>TransitEncryption</td>
-      <td>Enable [encryption for data in transit](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/in-transit-encryption.html)?</td>
-      <td>true</td>
-      <td>no</td>
-      <td>[true, false]</td>
-    </tr>
-    <tr>
-      <td>AuthToken</td>
-      <td>Password (16 to 128 characters) used to authenticate against Redis (requires TransitEncryption := true; leave blank to disable password-protection)</td>
-      <td></td>
-      <td>no</td>
-      <td></td>
-    </tr>
-    <tr>
       <td>SnapshotRetentionLimit</td>
       <td>The number of days for which ElastiCache retains automatic snapshots before deleting them (set to 0 to disable backups)</td>
       <td>35</td>
@@ -123,37 +97,31 @@ none
       <td>[0...35]</td>
     </tr>
     <tr>
-      <td>SnapshotName</td>
-      <td>Name of a snapshot from which you want to restore (leave blank to create an empty cache)</td>
-      <td></td>
+      <td>MaxDataStorageLimit</td>
+      <td>The maximum amount of data stored in the cache.</td>
+      <td>10</td>
       <td>no</td>
-      <td></td>
+      <td>[1...]</td>
     </tr>
     <tr>
-      <td>NumShards</td>
-      <td>Number of shards in the cluster.</td>
-      <td>1</td>
+      <td>MaxECPUPerSecondLimit</td>
+      <td>Maximum number of ECPU per second. Must be between 1000 and 15000000. You can set the value to zero to remove the limit.</td>
+      <td>1000</td>
       <td>no</td>
-      <td>[1-250]</td>
+      <td>[1000...15000000]</td>
     </tr>
     <tr>
-      <td>NumReplicas</td>
-      <td>Number of replicas per shard.</td>
-      <td>1</td>
+      <td>CacheName</td>
+      <td>The unique name for the cache.</td>
       <td>no</td>
-      <td>[0-5]</td>
+      <td>yes</td>
+      <td>Max 40 characters.</td>
     </tr>
-    <tr>
-      <td>CacheParameterGroupName</td>
-      <td>Name of a cache parameter group</td>
-      <td></td>
-      <td>no</td>
-      <td></td>
-    </tr>
+    
   </tbody>
 </table>
 
 ## Limitations
 
-* Scalable: Cache instances capacity (CPU, RAM, network, ...) is limited by design
-* Monitoring: Network In+Out is not monitored according to capacity of instance type
+* All connections to database require TLS.
+* Valkey/Redis runs in cluster mode, clients/apps need to support that.
